@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import ROOT, ORIGIN
 from backend.database import transaction, check_schema
 from backend.routes import auth, tareas, evaluaciones, dashboard, notificaciones, planificacion
-app=FastAPI(title='PlanifIA — Sprint 1',version='1.0.0')
+app=FastAPI(title='PlanifIA',version='1.0.0')
 log=logging.getLogger('planifia')
 _attempts=defaultdict(deque)
 _lock=Lock()
