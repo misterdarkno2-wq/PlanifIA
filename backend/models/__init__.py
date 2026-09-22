@@ -1,0 +1,1 @@
+"""Validaciones de entrada y de respuestas de IA."""
