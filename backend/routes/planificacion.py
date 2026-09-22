@@ -5,7 +5,7 @@ from backend.config import local_now
 from backend.database import query,execute,transaction
 from backend.models.schemas import Disponibilidad
 from backend.security import usuario_actual
-from backend.services import openai_service
+from backend.services import ollama_service
 router=APIRouter(prefix='/api',tags=['Planificación IA'])
 _busy=set();_lock=Lock()
 
@@ -32,7 +32,7 @@ def generar(user=Depends(usuario_actual)):
         availability=Disponibilidad.model_validate_json(row['datos'])
         tasks=query("SELECT id,titulo,asignatura,descripcion,fecha_entrega,prioridad,dificultad,tiempo_estimado FROM tareas WHERE usuario_id=%s AND estado='pendiente' ORDER BY fecha_entrega,id",(uid,))
         exams=query('SELECT id,nombre,asignatura,descripcion,fecha,prioridad,dificultad,tiempo_estimado FROM evaluaciones WHERE usuario_id=%s AND fecha>=%s ORDER BY fecha,id',(uid,local_now().date()))
-        content,model=openai_service.generate(availability,tasks,exams)
+        content,model=ollama_service.generate(availability,tasks,exams)
         pid=execute('INSERT INTO planes_estudio (usuario_id,contenido,modelo) VALUES (%s,%s,%s)',(uid,json.dumps(content,ensure_ascii=False),model))
         return {'id':pid,'contenido':content,'modelo':model,'guardado':False}
     finally:

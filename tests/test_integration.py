@@ -87,9 +87,9 @@ def test_mysql_falla_sin_exponer_credenciales(monkeypatch):
 
 
 def test_disponibilidad_planes_y_aislamiento(clients,monkeypatch):
-    # Fixture sintética para probar el contrato de persistencia, no generación OpenAI.
+    # Fixture sintética para probar el contrato de persistencia, no generación Ollama.
     import json
-    from backend.services import openai_service
+    from backend.services import ollama_service
     a,b,accounts=clients
     av={'dias':list(range(7)),'llegada':'17:00','hasta':'20:00','minutos_diarios':120,'descansos':True,'asignaturas_dificiles':'Matemática'}
     assert a.put('/api/disponibilidad',json={**av,'dias':[]}).status_code==422
@@ -98,12 +98,14 @@ def test_disponibilidad_planes_y_aislamiento(clients,monkeypatch):
     assert a.put('/api/disponibilidad',json=av).status_code==200
     assert a.get('/api/disponibilidad').json()['minutos_diarios']==120
     assert b.get('/api/disponibilidad').json() is None
-    monkeypatch.setattr(openai_service,'credentials',lambda:('','test'))
+    from fastapi import HTTPException
+    def unavailable(*args): raise HTTPException(503,'Ollama no disponible')
+    monkeypatch.setattr(ollama_service,'generate',unavailable)
     assert a.post('/api/planes/generar').status_code==503
     assert a.get('/api/planes').json()==[]
     today=str(local_now().date())
     content={'resumen':'Fixture de prueba de almacenamiento','bloques':[{'fecha':today,'inicio':'00:00:00','fin':'00:30:00','tipo':'tarea','actividad_id':1,'asignatura':'Prueba','actividad':'Fixture'}],'advertencias':[]}
-    pid=execute('INSERT INTO planes_estudio (usuario_id,contenido,modelo) VALUES (%s,%s,%s)',(accounts[0][0],json.dumps(content),'fixture-no-openai'))
+    pid=execute('INSERT INTO planes_estudio (usuario_id,contenido,modelo) VALUES (%s,%s,%s)',(accounts[0][0],json.dumps(content),'fixture-sin-generacion'))
     assert b.get(f'/api/planes/{pid}').status_code==404
     assert b.post(f'/api/planes/{pid}/guardar').status_code==404
     assert a.post(f'/api/planes/{pid}/guardar').status_code==200

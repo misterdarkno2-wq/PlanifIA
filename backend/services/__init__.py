@@ -1,1 +1,1 @@
-"""Lógica de recordatorios y conexión OpenAI."""
+"""Lógica de recordatorios y conexión Ollama."""

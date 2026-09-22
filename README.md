@@ -1,10 +1,14 @@
 # PlanifIA
 
-Organizador de tareas, pruebas y horarios de estudio. Backend en FastAPI, base de datos MySQL con PyMySQL y frontend en HTML, CSS y JavaScript. La generación de planes usa OpenAI.
+Organizador de tareas, pruebas y horarios de estudio. Backend en FastAPI, base de datos MySQL con PyMySQL y frontend en HTML, CSS y JavaScript. La generación de planes usa Qwen3 en tu equipo mediante Ollama.
 
 ## Instalación
 
-Necesitas Python 3.11 o posterior y acceso a una base MySQL.
+Necesitas Python 3.11 o posterior, acceso a una base MySQL y [Ollama para Windows](https://ollama.com/download/windows). Abre Ollama y descarga el modelo una vez:
+
+```powershell
+ollama pull qwen3:8b
+```
 
 ```powershell
 git clone https://github.com/misterdarkno2-wq/PlanifIA.git
@@ -28,11 +32,10 @@ DB_PORT=3306
 DB_USER=planifia_app
 DB_PASSWORD=tu_contraseña
 DB_NAME=planifia
-OPENAI_API_KEY=tu_clave
-OPENAI_MODEL=gpt-4o-mini
+OLLAMA_MODEL=qwen3:8b
 ```
 
-Si usas MySQL remoto, conserva el host, puerto, usuario y nombre de base que te asignaron. La clave de OpenAI solo es necesaria para generar planes. `.env` está excluido de Git; no publiques tus credenciales.
+Si usas MySQL remoto, conserva el host, puerto, usuario y nombre de base que te asignaron. La IA local no necesita ninguna API key. `.env` está excluido de Git; no publiques tus credenciales.
 
 Crea las tablas:
 
@@ -50,7 +53,9 @@ El script usa la base indicada por `DB_NAME` y crea las tablas que faltan sin bo
 
 Abre [PlanifIA](http://127.0.0.1:8000). Mantén la terminal abierta; Ctrl+C detiene el servidor. No necesitas activar el entorno virtual. Reinicia el servidor después de cambiar `.env`.
 
-Registra una cuenta, añade tareas o pruebas y guarda tu disponibilidad en el planificador. Al generar un plan se envían a OpenAI las actividades y los horarios, sin correo ni contraseña. El servidor valida el resultado antes de guardarlo. La llamada puede consumir cuota de tu cuenta.
+Registra una cuenta, añade tareas o pruebas y guarda tu disponibilidad en el planificador. Mantén Ollama abierto. FastAPI envía las actividades y horarios a `http://127.0.0.1:11434/api/chat`; Python distribuye las sesiones según vencimientos, prioridad y tiempo disponible. Qwen3 redacta el resumen y los objetivos de estudio en tu equipo. El servidor valida el plan antes de guardarlo en MySQL. La base puede estar en un servidor remoto según tu `.env`.
+
+La integración usa [JSON estructurado](https://docs.ollama.com/capabilities/structured-outputs), un contexto de 16 384 tokens y un límite de 3 minutos por solicitud. Ejecuta `ollama ps` para comprobar el uso de GPU. El modelo se mantiene cargado durante 10 minutos tras usarlo. Consulta la [compatibilidad de GPU](https://docs.ollama.com/gpu) si se carga en CPU.
 
 Los recordatorios se actualizan al abrir el dashboard o las notificaciones. No se envían correos ni avisos con la aplicación cerrada.
 
@@ -69,10 +74,10 @@ Documentación de la API: [localhost:8000/docs](http://127.0.0.1:8000/docs).
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Las pruebas de integración usan el MySQL del `.env` y eliminan sus propios usuarios temporales al finalizar. Las pruebas de OpenAI simulan respuestas. Para comprobar la generación real con actividades ficticias y consumir cuota de la API:
+Las pruebas de integración usan el MySQL del `.env` y eliminan sus propios usuarios temporales al finalizar. Las pruebas de Ollama simulan respuestas. Con PlanifIA y Ollama iniciados, comprueba la generación real, el guardado y el historial con actividades ficticias:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\probar_openai_real.py
+.\.venv\Scripts\python.exe scripts\probar_ollama_real.py
 ```
 
 Para comprobar que los datos y la sesión persisten después de reiniciar:
@@ -88,6 +93,8 @@ Para comprobar que los datos y la sesión persisten después de reiniciar:
 - **Conexión lenta por IPv6:** añade `DB_IPV4=true` a `.env` si el servidor solo responde correctamente por IPv4.
 - **401 en `/api/auth/me`:** es normal antes de iniciar sesión.
 - **403 al guardar:** abre la dirección definida en `APP_ORIGIN`. Las llamadas manuales requieren la cabecera `X-Planifia-Request: 1`.
-- **Error al generar:** revisa `OPENAI_API_KEY`, el acceso a `OPENAI_MODEL` y la cuota. Un plan inválido no se guarda.
+- **Ollama no conecta:** abre Ollama en el mismo equipo donde ejecutas FastAPI.
+- **Modelo no instalado:** ejecuta `ollama pull qwen3:8b` o descarga el modelo que hayas definido en `OLLAMA_MODEL`.
+- **Generación lenta:** comprueba `ollama ps` y cierra programas que ocupen la GPU. Una respuesta incompleta o un plan inválido no se guardan.
 
 El servidor está configurado para uso local. Para desplegarlo necesitas HTTPS, `COOKIE_SECURE=true`, un `APP_ORIGIN` correcto y límites de solicitudes compartidos entre procesos.
