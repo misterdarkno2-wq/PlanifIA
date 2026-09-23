@@ -5,8 +5,8 @@ from argon2.exceptions import VerificationError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from backend.models.schemas import Registro, Login
 from backend.database import execute, query, transaction
-from backend.security import hasher, DUMMY_HASH, token_hash, usuario_actual
-from backend.config import COOKIE_SECURE
+from backend.security import hasher, DUMMY_HASH, token_hash, session_token, usuario_actual
+from backend.config import COOKIE_SECURE, WEB_ORIGINS
 router=APIRouter(prefix='/api/auth', tags=['Autenticación'])
 
 @router.post('/registro', status_code=201)
@@ -21,6 +21,9 @@ def registro(data: Registro):
 
 @router.post('/login')
 def login(data: Login, request: Request, response: Response):
+    remote = request.headers.get('X-Planifia-Client') == 'pages'
+    if remote and request.headers.get('Origin') not in WEB_ORIGINS:
+        raise HTTPException(403, 'Este sitio no está autorizado para iniciar sesión.')
     user=query('SELECT id,nombre,correo,password_hash FROM usuarios WHERE correo=%s',(str(data.correo).lower(),),one=True)
     try: hasher.verify(user['password_hash'] if user else DUMMY_HASH, data.password)
     except VerificationError: raise HTTPException(401,'Correo o contraseña incorrectos.')
@@ -28,15 +31,19 @@ def login(data: Login, request: Request, response: Response):
     token=secrets.token_urlsafe(32)
     expiry=datetime.now(timezone.utc).replace(tzinfo=None)+timedelta(days=7)
     with transaction() as cur:
-        cur.execute('DELETE FROM sesiones WHERE expira<UTC_TIMESTAMP() OR token_hash=%s',(token_hash(request.cookies.get('planifia_session','')),))
+        cur.execute('DELETE FROM sesiones WHERE expira<UTC_TIMESTAMP() OR token_hash=%s',(token_hash(session_token(request)),))
         cur.execute('INSERT INTO sesiones (token_hash,usuario_id,expira) VALUES (%s,%s,%s)',(token_hash(token),user['id'],expiry))
-    response.set_cookie('planifia_session',token,httponly=True,secure=COOKIE_SECURE,samesite='strict',max_age=604800,path='/')
-    return {k:user[k] for k in ('id','nombre','correo')}
+    result = {k:user[k] for k in ('id','nombre','correo')}
+    if remote:
+        result['sessionToken'] = token
+    else:
+        response.set_cookie('planifia_session',token,httponly=True,secure=COOKIE_SECURE,samesite='strict',max_age=604800,path='/')
+    return result
 
 @router.get('/me')
 def me(user=Depends(usuario_actual)): return user
 
 @router.post('/logout',status_code=204)
 def logout(request: Request,response: Response):
-    execute('DELETE FROM sesiones WHERE token_hash=%s',(token_hash(request.cookies.get('planifia_session','')),))
+    execute('DELETE FROM sesiones WHERE token_hash=%s',(token_hash(session_token(request)),))
     response.delete_cookie('planifia_session',path='/',secure=COOKIE_SECURE,httponly=True,samesite='strict')

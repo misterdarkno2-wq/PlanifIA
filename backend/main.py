@@ -7,7 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from backend.config import ROOT, ORIGIN
+from fastapi.middleware.cors import CORSMiddleware
+from backend.config import ROOT, ORIGIN, WEB_ORIGINS
 from backend.database import transaction, check_schema
 from backend.routes import auth, tareas, evaluaciones, dashboard, notificaciones, planificacion, mascota
 app=FastAPI(title='PlanifIA',version='1.0.0')
@@ -18,7 +19,7 @@ _lock=Lock()
 @app.middleware('http')
 async def protections(request:Request, call_next):
     if request.url.path.startswith('/api/') and request.method in ('POST','PUT','PATCH','DELETE'):
-        if request.headers.get('Origin') not in (None,ORIGIN):
+        if request.headers.get('Origin') not in (None,ORIGIN,*WEB_ORIGINS):
             return JSONResponse({'detail':'Origen no permitido.'},status_code=403)
         if request.headers.get('X-Planifia-Request') != '1':
             return JSONResponse({'detail':'Solicitud no válida.'},status_code=403)
@@ -40,6 +41,10 @@ async def protections(request:Request, call_next):
         response.headers['Content-Security-Policy']="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     if request.url.path.startswith('/api/'): response.headers['Cache-Control']='no-store'
     return response
+
+app.add_middleware(CORSMiddleware, allow_origins=list(WEB_ORIGINS),
+    allow_credentials=False, allow_methods=['GET','POST','PUT','PATCH','DELETE'],
+    allow_headers=['Content-Type','Authorization','X-Planifia-Request','X-Planifia-Client'])
 
 @app.exception_handler(pymysql.MySQLError)
 async def db_error(request,error):

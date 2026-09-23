@@ -9,7 +9,7 @@
     "android:dev": "tauri android dev",
     "android:apk": "tauri android build --debug --apk --target aarch64",
     "desktop:dev": "tauri dev",
-    "test:mobile": "node --test tests/mobile.test.js"
+    "test:mobile": "node --test tests/mobile.test.js tests/remote.test.js"
   },
   "devDependencies": {"@tauri-apps/cli": "^2"}
 }

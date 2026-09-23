@@ -59,6 +59,20 @@ La integración usa [JSON estructurado](https://docs.ollama.com/capabilities/str
 
 Los recordatorios se actualizan al abrir el dashboard o las notificaciones. No se envían correos ni avisos con la aplicación cerrada.
 
+## Web en GitHub Pages
+
+Abre [PlanifIA en GitHub Pages](https://misterdarkno2-wq.github.io/PlanifIA/). Pages publica las pantallas; las cuentas, tareas, Lumi y los planes se procesan en FastAPI y se guardan en MySQL. Ollama sigue usando la GPU del PC. Mantén el servidor y el túnel encendidos.
+
+El despliegue se actualiza al subir cambios del frontend a `main`. La variable del repositorio **PLANIFIA_API_URL** contiene la dirección HTTPS del servidor, sin `/app` ni `/api`. Si cambia el túnel, actualiza esa variable en GitHub → Settings → Secrets and variables → Actions → Variables y ejecuta **Publicar PlanifIA en GitHub Pages** desde Actions. También puedes cambiarla en **Conexión** dentro de la web para ese navegador.
+
+El servidor autoriza exclusivamente los orígenes indicados en `.env`:
+
+```dotenv
+WEB_ORIGINS=https://misterdarkno2-wq.github.io
+```
+
+Reinicia FastAPI después de modificarlo. Pages utiliza una sesión por pestaña que sobrevive a la recarga; al cerrar sesión se revoca en el servidor. No requiere cookies de terceros. La web servida por FastAPI y la app Android conservan sus sesiones habituales. El despliegue incluye solo los archivos de `frontend`; no publica `.env`, MySQL, claves ni archivos de compilación de Android.
+
 ## App Android con Tauri 2
 
 La app incluye las mismas pantallas, tareas, planes y Lumi de la web, con navegación inferior y tus assets de marca. FastAPI, MySQL y Ollama siguen en el servidor: la IA utiliza la GPU del PC. El teléfono necesita Internet; esta versión no ofrece edición sin conexión ni notificaciones push.

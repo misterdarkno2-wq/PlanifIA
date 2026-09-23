@@ -1,7 +1,7 @@
-import {isNative,request} from './connection.js';
+import {isNative,isRemoteWeb,request} from './connection.js';
 export const $=(q,root=document)=>root.querySelector(q);
-if(isNative){
- document.documentElement.classList.add('native');
+if(isNative||isRemoteWeb){
+ if(isNative)document.documentElement.classList.add('native');
  const slot=$('.topbar-title')||$('.auth-small');
  if(slot){const link=document.createElement('a');link.href='servidor.html';link.className='text-link connection-link';link.textContent='Conexión';slot.append(document.createElement('br'),link);}
 }
