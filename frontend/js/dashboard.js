@@ -1,5 +1,6 @@
+import {mountPet} from './pet.js';
 import {api,$,init,escapeHTML as e,dateLabel,empty,showError} from './app.js';
-async function load(){const user=await init();if(!user)return;try{const data=await api('/dashboard');$('#greeting').textContent=`Hola, ${user.nombre.split(' ')[0]} ☀`;
+async function load(){const user=await init();if(!user)return;mountPet(user);try{const data=await api('/dashboard');$('#greeting').textContent=`Hola, ${user.nombre.split(' ')[0]} ☀`;
 $('#today-label').textContent=dateLabel(data.hoy,{weekday:'long',day:'numeric',month:'long'});
 const stats=[['Tareas pendientes',data.pendientes,'Por avanzar',''],['Pruebas esta semana',data.pruebas_semana,'En los próximos 7 días',''],['Tareas atrasadas',data.atrasadas,'Revisa su fecha','warning'],['Notificaciones nuevas',data.no_leidas,'Tus recordatorios','']];
 $('#stats').innerHTML=stats.map(([label,n,detail,cls])=>`<article class="stat ${cls}"><div class="stat-header">${label}</div><p class="stat-value">${n}</p><small>${detail}</small></article>`).join('');

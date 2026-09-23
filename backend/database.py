@@ -4,7 +4,7 @@ import socket
 import pymysql
 from backend.config import DB, DB_IPV4
 
-TABLES=('usuarios','sesiones','tareas','evaluaciones','disponibilidad','planes_estudio','notificaciones')
+TABLES=('usuarios','sesiones','tareas','evaluaciones','disponibilidad','planes_estudio','notificaciones','mascotas')
 
 
 def connect(**overrides):

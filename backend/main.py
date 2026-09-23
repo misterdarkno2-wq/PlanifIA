@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from backend.config import ROOT, ORIGIN
 from backend.database import transaction, check_schema
-from backend.routes import auth, tareas, evaluaciones, dashboard, notificaciones, planificacion
+from backend.routes import auth, tareas, evaluaciones, dashboard, notificaciones, planificacion, mascota
 app=FastAPI(title='PlanifIA',version='1.0.0')
 log=logging.getLogger('planifia')
 _attempts=defaultdict(deque)
@@ -77,5 +77,5 @@ def health():
 @app.get('/',include_in_schema=False)
 def index(): return RedirectResponse('/app/login.html')
 
-for router in (auth.router,tareas.router,evaluaciones.router,dashboard.router,notificaciones.router,planificacion.router): app.include_router(router)
+for router in (auth.router,tareas.router,evaluaciones.router,dashboard.router,notificaciones.router,planificacion.router,mascota.router): app.include_router(router)
 app.mount('/app',StaticFiles(directory=ROOT/'frontend',html=True),name='frontend')

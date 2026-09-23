@@ -61,6 +61,20 @@ Los recordatorios se actualizan al abrir el dashboard o las notificaciones. No s
 
 ## Desarrollo
 
+### Mascota y experiencia
+
+Lumi acompaña al usuario en el dashboard y reacciona al completar tareas. Su progreso se guarda en MySQL. Para actualizar una instalación existente, ejecuta de nuevo `scripts/crear_base.py` y reinicia FastAPI; la migración añade los campos de XP y la tabla `mascotas` sin borrar datos. Requiere permiso `ALTER` sobre `tareas`.
+
+- Prioridad baja: 10 XP; media: 20 XP; alta: 35 XP.
+- Completar antes del día de entrega suma 5 XP. El mismo día o después entrega la XP base.
+- Reabrir o eliminar una tarea retira su recompensa. Volver a completarla recupera exactamente el primer importe; editar la prioridad después no lo aumenta.
+- Las tareas antiguas o creadas directamente como completadas no reciben XP retroactiva.
+- Cada nivel requiere `50 + 15 × (nivel actual − 1)` XP. Hay 20 niveles y evoluciones en los niveles 1, 5, 10, 15 y 20. Al retirar XP, el nivel y la etapa se ajustan al saldo.
+
+Los valores están en `backend/pet_config.py`. La actualización de tarea, recompensa y mascota comparte una transacción y bloqueos de filas. El nivel y la etapa se calculan desde el saldo persistido para evitar datos contradictorios.
+
+### Archivos y pruebas
+
 - `backend/`: API, sesiones, consultas y planificación.
 - `frontend/`: páginas, estilos y JavaScript.
 - `database/planifia.sql`: estructura de las tablas.

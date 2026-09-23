@@ -20,6 +20,14 @@ def initialize(create_database=False):
             for statement in (ROOT/'database'/'planifia.sql').read_text(encoding='utf8').split(';'):
                 if statement.strip():
                     cursor.execute(statement)
+            cursor.execute('SHOW COLUMNS FROM tareas')
+            columns={row['Field'] for row in cursor.fetchall()}
+            additions={'xp_otorgada':'INT UNSIGNED NOT NULL DEFAULT 0',
+                       'xp_activa':'BOOLEAN NOT NULL DEFAULT FALSE',
+                       'xp_otorgada_en':'DATETIME NULL','xp_revocada_en':'DATETIME NULL'}
+            for name,definition in additions.items():
+                if name not in columns:
+                    cursor.execute(f'ALTER TABLE tareas ADD COLUMN {name} {definition}')
             check_schema(cursor)
 
 
@@ -32,7 +40,7 @@ def main():
     except pymysql.MySQLError as error:
         code=error.args[0] if error.args else 'desconocido'
         if code in (1044,1045,1142,1143):
-            detail='Revisa las credenciales y los permisos CREATE y REFERENCES sobre DB_NAME.'
+            detail='Revisa las credenciales y los permisos CREATE, REFERENCES y ALTER sobre DB_NAME.'
         elif code==1049:
             detail='DB_NAME no existe. Usa una base asignada o ejecuta con --crear-base si tienes permiso.'
         else:
