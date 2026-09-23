@@ -7,4 +7,15 @@
 @keyframes lumi-breathe{50%{transform:translateY(-3px) scale(1.015)}}@keyframes lumi-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.12)}}@keyframes lumi-jump{40%{transform:translateY(-12px) rotate(-5deg)}75%{transform:translateY(-5px) rotate(4deg)}}@keyframes lumi-glow{50%{filter:brightness(1.35);transform:scale(1.08)}}@keyframes lumi-evolve{30%{filter:brightness(1.6);transform:scale(.88)}65%{filter:drop-shadow(0 0 15px #e8bf63);transform:scale(1.08)}100%{filter:none;transform:scale(1)}}
 @media(max-width:1200px){.pet-card{grid-template-columns:150px 1fr;gap:16px}.pet-journey{grid-column:1/-1;border-left:0;border-top:1px solid #d9e7de;padding:16px 0 0}.pet-journey>p{display:none}.pet-journey ol{margin:0}.pet-message{min-height:0}.pet-card{min-height:0}}
 @media(max-width:680px){.pet-card{grid-template-columns:100px minmax(0,1fr);padding:16px;gap:12px}.pet-info .eyebrow{font-size:9px;letter-spacing:.6px}.pet-title h2{font-size:25px}.pet-title{gap:7px}.pet-stage span{display:block}.pet-stage{margin:5px 0 12px}.pet-message{font-size:12px}.pet-card.compact{padding:14px;grid-template-columns:85px minmax(0,1fr);gap:12px}.pet-journey small{font-size:9px}}
-@media(prefers-reduced-motion:reduce){.pet-card *{animation:none!important;transition:none!important}}
+.lumi-gaze{animation:lumi-look 11s ease-in-out infinite}
+.lumi-sway{transform-origin:130px 180px;animation:lumi-curious 14s ease-in-out infinite}
+.lumi-sprout{transform-origin:130px 65px;animation:lumi-leaf 5s ease-in-out infinite}
+.lumi-shadow{transform-box:fill-box;transform-origin:center;animation:lumi-shadow-breathe 4.5s ease-in-out infinite}
+.pet-happy .lumi-sway,.pet-level-up .lumi-sway,.pet-evolving .lumi-sway{animation:none}
+@keyframes lumi-look{0%,15%,45%,65%,100%{transform:translate(0,0)}22%,33%{transform:translate(4px,-1px)}73%,84%{transform:translate(-4px,1px)}}
+@keyframes lumi-curious{0%,60%,85%,100%{transform:rotate(0)}68%,73%{transform:rotate(-3deg)}78%{transform:rotate(2deg)}}
+@keyframes lumi-leaf{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+@keyframes lumi-shadow-breathe{0%,100%{transform:scaleX(1);opacity:1}50%{transform:scaleX(.94);opacity:.75}}
+@media(hover:hover){.pet-portrait:hover .lumi-gaze{animation:none;transform:translate(0,-2px)}.pet-portrait:hover .lumi-sway{animation:lumi-hello .9s ease-in-out 1}}
+@keyframes lumi-hello{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}65%{transform:rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.pet-card *{animation:none!important;transition:none!important}.pet-portrait:hover .lumi-gaze{transform:none}}
