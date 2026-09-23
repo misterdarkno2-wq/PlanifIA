@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#10796c"><title>Conexión · PlanifIA</title>
+ <link rel="icon" href="favicon.svg"><link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+ <main class="connection-page">
+  <a href="login.html" class="text-link">← Volver</a>
+  <img class="connection-logo" src="assets/planifia-logo.png" alt="PlanifIA" width="300" height="100">
+  <section class="card">
+   <p class="eyebrow">TU ESPACIO, CONECTADO</p><h1>Conexión</h1>
+   <p class="muted">Tus tareas y Lumi se guardan en tu cuenta. Conecta la app con el servidor de PlanifIA.</p>
+   <form id="server-form">
+    <div class="field"><label for="server-url">Dirección del servidor</label><input id="server-url" type="url" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://tu-servidor.com" required aria-describedby="server-help"></div>
+    <p id="server-help" class="muted">Si usas un túnel temporal, pega aquí su nueva dirección cuando cambie. Cambiar de servidor cierra tu sesión en este dispositivo.</p>
+    <div id="form-error" class="error" role="alert" hidden></div>
+    <button id="connect" type="submit" disabled>Comprobar y conectar</button>
+    <p id="connection-status" role="status">Cargando configuración…</p>
+   </form>
+  </section>
+  <p class="muted">Mantén encendidos el servidor y Ollama en tu PC para crear planes con IA. Necesitas conexión a Internet.</p>
+ </main>
+ <script type="module" src="js/servidor.js"></script>
+</body>
+</html>

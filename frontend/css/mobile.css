@@ -1,0 +1,36 @@
+.brand-image{width:185px;height:auto;display:block;max-width:100%}
+.auth-story .logo{width:210px;background:white;padding:8px 12px;border-radius:14px}
+.connection-page{max-width:530px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+.connection-logo{display:block;max-width:100%;height:auto;margin:22px auto}
+.connection-page h1{font-size:28px}.connection-page .field{margin:24px 0 12px}
+.connection-page #server-help,.connection-page #connection-status{font-size:13px;margin:12px 0 20px}
+.connection-page button{width:100%}.connection-page .error{margin-bottom:16px}
+.confirm-dialog{max-width:420px;width:calc(100% - 32px)}
+.native body{min-height:100dvh;overscroll-behavior-y:none}
+.native .topbar{padding-top:env(safe-area-inset-top);height:calc(72px + env(safe-area-inset-top))}
+.native .auth-page{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.native .connection-link{display:inline-block;min-height:30px;padding-top:4px}
+@media(max-width:680px){
+ .native .sidebar{height:0;padding:0;border:0}
+ .native .sidebar .logo{display:none}
+ .native .nav{position:fixed;z-index:20;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:white;border-top:1px solid var(--line);padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));overflow:visible}
+ .native .nav a{flex-direction:column;gap:4px;justify-content:flex-start;text-align:center;white-space:normal;font-size:10px;line-height:1.25;padding:7px 2px;min-height:54px}
+ .native .nav .icon{width:21px;height:21px}
+ .native .content{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+ .native .topbar-actions{gap:12px}.native .topbar-title{font-size:11px}
+ .native .auth-story{background:var(--bg);padding:26px 25px 0}
+ .native .auth-story .logo{padding:0;background:none;width:210px;margin:0 auto}
+ .native .auth-story h1{display:none}.native .auth-form-wrap{padding-top:24px}
+ .native .toast{bottom:calc(90px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px)}
+ .native dialog{max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto}
+ .native input,.native select,.native textarea{font-size:16px}
+ .native .table-wrap{overflow:visible}
+ .native table{min-width:0;display:block}
+ .native thead{display:none}
+ .native tbody{display:grid;gap:16px}
+ .native tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid var(--line);border-radius:12px;padding:16px;background:white}
+ .native tbody td{padding:0;border:0;white-space:normal}
+ .native tbody td:first-child,.native tbody td:last-child{grid-column:1/-1}
+ .native tbody td[data-label]::before{content:attr(data-label);display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+ .native tbody .actions{flex-wrap:wrap}.native tbody .actions button{min-height:44px;flex:1}
+}

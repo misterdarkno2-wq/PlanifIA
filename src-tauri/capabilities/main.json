@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "main",
+  "description": "Conexión con PlanifIA desde las pantallas incluidas en la app.",
+  "windows": ["main"],
+  "permissions": ["allow-api-request", "allow-get-server", "allow-set-server"]
+}

@@ -1,12 +1,15 @@
+import {isNative,request} from './connection.js';
 export const $=(q,root=document)=>root.querySelector(q);
+if(isNative){
+ document.documentElement.classList.add('native');
+ const slot=$('.topbar-title')||$('.auth-small');
+ if(slot){const link=document.createElement('a');link.href='servidor.html';link.className='text-link connection-link';link.textContent='Conexión';slot.append(document.createElement('br'),link);}
+}
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function dateLabel(value,options={day:'numeric',month:'short'}) {return new Intl.DateTimeFormat('es-CL',options).format(new Date(String(value).slice(0,10)+'T12:00:00'));}
 export async function api(path,options={}) {
- let response;
- try {response=await fetch('/api'+path,{...options,credentials:'same-origin',headers:{'Content-Type':'application/json','X-Planifia-Request':'1',...options.headers},body:options.body===undefined?undefined:JSON.stringify(options.body)});}
- catch {throw new Error('No pudimos conectar con PlanifIA. Revisa que el servidor esté iniciado.');}
- const data=response.status===204?null:await response.json().catch(()=>null);
- if(!response.ok){if(response.status===401&&!path.startsWith('/auth/'))location.href='login.html';const error=new Error(data?.detail||'No pudimos completar la solicitud. Inténtalo nuevamente.');error.status=response.status;throw error;}
+ const {status,data}=await request(path,options);
+ if(status<200||status>=300){if(status===401&&!path.startsWith('/auth/'))location.href='login.html';const error=new Error(data?.detail||'No pudimos completar la solicitud. Inténtalo nuevamente.');error.status=status;throw error;}
  return data;
 }
 export function showError(error,selector='#page-error'){const el=$(selector);if(el){el.textContent=error.message;el.hidden=false;}else toast(error.message,true);}
@@ -18,3 +21,11 @@ export function icons(){document.querySelectorAll('[data-icon]').forEach(el=>{el
 export async function bell(){try{const n=await api('/notificaciones');$('#bell-count').textContent=n.no_leidas;return n;}catch(error){showError(error);}}
 export async function init({notifications=true}={}){icons();try{const user=await api('/auth/me');$('#user-name').textContent=user.nombre;$('#avatar').textContent=user.nombre.slice(0,1).toUpperCase();const logout=async()=>{try{await api('/auth/logout',{method:'POST'});location.href='login.html';}catch(e){showError(e);}};$('#logout').onclick=logout;$('#logout-mobile').onclick=logout;if(notifications){bell();setInterval(()=>{if(!document.hidden)bell();},60000);}return user;}catch(error){if(error.status===401)location.href='login.html';else showError(error);return null;}}
 export function empty(title,text,link=''){return `<div class="empty"><h3>${escapeHTML(title)}</h3><p>${escapeHTML(text)}</p>${link}</div>`;}
+export function confirmAction(message){
+ return new Promise(resolve=>{
+  const dialog=document.createElement('dialog');dialog.className='confirm-dialog';
+  dialog.innerHTML='<form method="dialog"><h2>Eliminar actividad</h2><p></p><div class="actions"><button value="cancel" class="secondary" autofocus>Cancelar</button><button value="delete" class="danger">Eliminar</button></div></form>';
+  $('p',dialog).textContent=message;dialog.addEventListener('close',()=>{const accepted=dialog.returnValue==='delete';dialog.remove();resolve(accepted);},{once:true});
+  document.body.append(dialog);dialog.showModal();
+ });
+}

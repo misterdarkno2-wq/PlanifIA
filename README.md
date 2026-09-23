@@ -59,6 +59,73 @@ La integración usa [JSON estructurado](https://docs.ollama.com/capabilities/str
 
 Los recordatorios se actualizan al abrir el dashboard o las notificaciones. No se envían correos ni avisos con la aplicación cerrada.
 
+## App Android con Tauri 2
+
+La app incluye las mismas pantallas, tareas, planes y Lumi de la web, con navegación inferior y tus assets de marca. FastAPI, MySQL y Ollama siguen en el servidor: la IA utiliza la GPU del PC. El teléfono necesita Internet; esta versión no ofrece edición sin conexión ni notificaciones push.
+
+### Probar el APK
+
+Descarga la aplicación desde [GitHub Releases: Android 1.1.0 de prueba](https://github.com/misterdarkno2-wq/PlanifIA/releases/tag/v1.1.0-android-preview.1).
+
+Instala `PlanifIA-android-arm64.apk` de la carpeta `dist` en un Android 7 o posterior con procesador ARM64. Es una compilación optimizada para pruebas, firmada con la clave de depuración de este equipo. Android puede pedir permiso para instalar desde el navegador o gestor de archivos.
+
+1. Mantén FastAPI, Ollama y el túnel encendidos en el PC.
+2. Abre PlanifIA y entra con tu cuenta existente, o regístrate.
+3. En **Conexión**, comprueba o cambia la dirección HTTPS si el túnel ha cambiado. Usa solo `https://nombre.trycloudflare.com`, sin `/app` ni `/api`.
+
+La dirección inicial está en `src-tauri/default-server.json`; se puede cambiar después desde la app. Cambiarla cierra la sesión local. El túnel temporal deja de funcionar al detenerlo; para uso permanente necesitas una dirección HTTPS estable.
+
+### Compilar en Windows
+
+Instala [los requisitos oficiales de Tauri](https://v2.tauri.app/start/prerequisites/): Node.js LTS, Rust, Visual Studio Build Tools con C++ y Android Studio. En el SDK Manager de Android instala Platform 36, Build Tools 36, Platform Tools, Command-line Tools y NDK (Side by side). En este equipo se usa NDK `29.0.13846066`.
+
+Desde la raíz del proyecto, en PowerShell:
+
+```powershell
+npm.cmd ci
+$env:JAVA_HOME = "$env:USERPROFILE\.jdks\jbr-21.0.11"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:NDK_HOME = "$env:ANDROID_HOME\ndk\29.0.13846066"
+rustup target add aarch64-linux-android
+npm.cmd run android:apk
+```
+
+El APK se genera dentro de `src-tauri/gen/android/app/build/outputs/apk/`. El proyecto Android ya está incluido: no necesitas ejecutar `android:init` de nuevo. Usa **JDK 21**: la ruta anterior corresponde a este equipo. En otro equipo puedes instalar Temurin 21 o descargar JDK 21 desde Android Studio y ajustar `JAVA_HOME`. El Java 25 de algunas versiones nuevas de Android Studio no es compatible con el Gradle incluido. Si tu instalación usa otro NDK o SDK, ajusta esas rutas.
+
+Para probar con un móvil conectado por USB (activa Depuración USB y acepta el equipo), o con un emulador abierto en Android Studio:
+
+```powershell
+npm.cmd run android:dev
+```
+
+Para probar las pantallas como ventana de Windows:
+
+```powershell
+npm.cmd run desktop:dev
+```
+
+La conexión de la app usa peticiones HTTPS desde Rust y reutiliza las sesiones de FastAPI. La cookie se guarda en el directorio privado de la aplicación; no se expone al JavaScript, no se incluye en copias de seguridad Android y se elimina al salir de la cuenta. El APK contiene solamente el frontend y el cliente nativo; no contiene `.env`, credenciales MySQL ni Ollama. No hay que abrir CORS ni cambiar las protecciones del navegador.
+
+Para publicar en Google Play necesitas una compilación de distribución y tu propia clave de firma: sigue la [guía oficial de Android](https://v2.tauri.app/distribute/google-play/). La clave de depuración sirve para probar. Compilar para iPhone requiere macOS, Xcode y firma de Apple; desde este equipo Windows se prepara Android.
+
+Para reproducir el APK optimizado de prueba, después de haber ejecutado `android:apk` una vez (crea la clave de depuración), usa las mismas variables de entorno anteriores:
+
+```powershell
+npm.cmd run tauri -- android build --apk --target aarch64
+New-Item -ItemType Directory -Path dist -Force | Out-Null
+& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" sign --ks "$env:USERPROFILE\.android\debug.keystore" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out dist/PlanifIA-android-arm64.apk src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify dist/PlanifIA-android-arm64.apk
+```
+
+La contraseña `android` es la estándar de la clave de depuración; no uses esa clave para publicar. Los APK, las claves y las carpetas de compilación están excluidos de Git.
+
+Se comprobaron registro, acceso, persistencia de sesión, tareas, XP de Lumi y generación/guardado con Ollama en Tauri para Windows, además de la interfaz a 390 y 1440 píxeles. El APK se compiló y su firma se verificó. Falta probarlo en un teléfono Android: el emulador de este PC necesita habilitar la aceleración de virtualización.
+
+```powershell
+npm.cmd run test:mobile
+cargo test --manifest-path src-tauri/Cargo.toml --lib
+```
+
 ## Desarrollo
 
 ### Mascota y experiencia
