@@ -59,16 +59,60 @@ La integración usa [JSON estructurado](https://docs.ollama.com/capabilities/str
 
 Los recordatorios se actualizan al abrir el dashboard o las notificaciones. No se envían correos ni avisos con la aplicación cerrada.
 
+## Encender el servidor de planifia.cl en este PC
+
+La web está en [planifia.cl](https://planifia.cl) y el servidor en `https://api.planifia.cl`. Cloudflare conecta esa dirección fija con el puerto 8001 de este equipo. Al reiniciar no necesitas volver a configurar DNS ni crear otro túnel.
+
+1. Abre **Ollama** desde Inicio. Si ya aparece junto al reloj, déjalo abierto.
+2. Abre PowerShell y ejecuta:
+
+```powershell
+cd C:\Users\Admin\Downloads\planifia
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001 --env-file .env.public
+```
+
+3. Abre **otra terminal de PowerShell** y ejecuta:
+
+```powershell
+& "$env:LOCALAPPDATA\PlanifIA\cloudflared.exe" tunnel --config "$env:USERPROFILE\.cloudflared\planifia.yml" run planifia
+```
+
+4. Abre [PlanifIA](https://planifia.cl). Puedes comprobar el servidor en [api.planifia.cl/api/health](https://api.planifia.cl/api/health): debe responder con `estado: ok`.
+
+Mantén ambas terminales abiertas y el PC conectado a Internet, sin suspender. Ctrl+C detiene cada proceso. Con el PC apagado las pantallas siguen alojadas en GitHub Pages, pero las cuentas, tareas y la IA necesitan el servidor encendido. Estos pasos son manuales; no hay un servicio de inicio automático instalado.
+
+El archivo local `.env.public` ya está preparado en este equipo y contiene:
+
+```dotenv
+APP_ORIGIN=https://api.planifia.cl
+COOKIE_SECURE=true
+WEB_ORIGINS=https://planifia.cl,https://www.planifia.cl,https://misterdarkno2-wq.github.io
+```
+
+Las credenciales MySQL siguen en `.env`. Las credenciales y la configuración del túnel están en `%USERPROFILE%\.cloudflared`, fuera del repositorio. Conserva esos archivos en este equipo y no publiques sus claves. En otro PC debes volver a autorizar y configurar el túnel.
+
+Si aparece **puerto 8001 ocupado**, ya hay un servidor usando ese puerto: comprueba `/api/health` antes de abrir otra instancia. No ejecutes `tunnel --url`: eso crea una dirección temporal distinta.
+
+### Configuración del dominio
+
+- NIC Chile delega el DNS a `kaiser.ns.cloudflare.com` y `sloan.ns.cloudflare.com`.
+- Cloudflare tiene cuatro registros A para `@`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153` y `185.199.111.153`, con estado **Solo DNS**.
+- `www` es un CNAME a `misterdarkno2-wq.github.io`, con estado **Solo DNS**.
+- `api` apunta al túnel de Cloudflare llamado `planifia`, que dirige las solicitudes a `http://127.0.0.1:8001`.
+- El dominio personalizado de GitHub Pages es `planifia.cl`. La variable `PLANIFIA_API_URL` del repositorio debe ser `https://api.planifia.cl`.
+
+Tras cambiar DNS por primera vez, la propagación y la emisión de los certificados HTTPS pueden tardar. No es necesario repetir esos cambios cada vez que enciendes el PC.
+
 ## Web en GitHub Pages
 
-Abre [PlanifIA en GitHub Pages](https://misterdarkno2-wq.github.io/PlanifIA/). Pages publica las pantallas; las cuentas, tareas, Lumi y los planes se procesan en FastAPI y se guardan en MySQL. Ollama sigue usando la GPU del PC. Mantén el servidor y el túnel encendidos.
+Abre [PlanifIA](https://planifia.cl). Pages publica las pantallas; las cuentas, tareas, Lumi y los planes se procesan en FastAPI y se guardan en MySQL. Ollama sigue usando la GPU del PC. Mantén el servidor y el túnel encendidos.
 
 El despliegue se actualiza al subir cambios del frontend a `main`. La variable del repositorio **PLANIFIA_API_URL** contiene la dirección HTTPS del servidor, sin `/app` ni `/api`. Si cambia el túnel, actualiza esa variable en GitHub → Settings → Secrets and variables → Actions → Variables y ejecuta **Publicar PlanifIA en GitHub Pages** desde Actions. También puedes cambiarla en **Conexión** dentro de la web para ese navegador.
 
 El servidor autoriza exclusivamente los orígenes indicados en `.env`:
 
 ```dotenv
-WEB_ORIGINS=https://misterdarkno2-wq.github.io
+WEB_ORIGINS=https://planifia.cl,https://www.planifia.cl,https://misterdarkno2-wq.github.io
 ```
 
 Reinicia FastAPI después de modificarlo. Pages utiliza una sesión por pestaña que sobrevive a la recarga; al cerrar sesión se revoca en el servidor. No requiere cookies de terceros. La web servida por FastAPI y la app Android conservan sus sesiones habituales. El despliegue incluye solo los archivos de `frontend`; no publica `.env`, MySQL, claves ni archivos de compilación de Android.
@@ -85,9 +129,9 @@ Instala `PlanifIA-android-arm64.apk` de la carpeta `dist` en un Android 7 o post
 
 1. Mantén FastAPI, Ollama y el túnel encendidos en el PC.
 2. Abre PlanifIA y entra con tu cuenta existente, o regístrate.
-3. En **Conexión**, comprueba o cambia la dirección HTTPS si el túnel ha cambiado. Usa solo `https://nombre.trycloudflare.com`, sin `/app` ni `/api`.
+3. En **Conexión**, usa `https://api.planifia.cl`, sin `/app` ni `/api`. El APK de prueba anterior conserva un enlace temporal: cámbialo una vez desde esa pantalla.
 
-La dirección inicial está en `src-tauri/default-server.json`; se puede cambiar después desde la app. Cambiarla cierra la sesión local. El túnel temporal deja de funcionar al detenerlo; para uso permanente necesitas una dirección HTTPS estable.
+La dirección inicial para futuras compilaciones está en `src-tauri/default-server.json`; se puede cambiar después desde la app. Cambiarla cierra la sesión local. El túnel `planifia` mantiene la misma dirección al reiniciarlo.
 
 ### Compilar en Windows
 
