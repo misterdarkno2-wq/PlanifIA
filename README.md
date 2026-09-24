@@ -1,13 +1,13 @@
 # PlanifIA
 
-Organizador de tareas, pruebas y horarios de estudio. Backend en FastAPI, base de datos MySQL con PyMySQL y frontend en HTML, CSS y JavaScript. La generación de planes usa Qwen3 en tu equipo mediante Ollama.
+Organizador de tareas, pruebas y horarios de estudio. Backend en FastAPI, base de datos MySQL con PyMySQL y frontend en HTML, CSS y JavaScript. La generación de planes usa Qwen 3.5 9B en tu equipo mediante Ollama.
 
 ## Instalación
 
 Necesitas Python 3.11 o posterior, acceso a una base MySQL y [Ollama para Windows](https://ollama.com/download/windows). Abre Ollama y descarga el modelo una vez:
 
 ```powershell
-ollama pull qwen3:8b
+ollama pull qwen3.5:9b
 ```
 
 ```powershell
@@ -32,7 +32,7 @@ DB_PORT=3306
 DB_USER=planifia_app
 DB_PASSWORD=tu_contraseña
 DB_NAME=planifia
-OLLAMA_MODEL=qwen3:8b
+OLLAMA_MODEL=qwen3.5:9b
 ```
 
 Si usas MySQL remoto, conserva el host, puerto, usuario y nombre de base que te asignaron. La IA local no necesita ninguna API key. `.env` está excluido de Git; no publiques tus credenciales.
@@ -53,7 +53,20 @@ El script usa la base indicada por `DB_NAME` y crea las tablas que faltan sin bo
 
 Abre [PlanifIA](http://127.0.0.1:8000). Mantén la terminal abierta; Ctrl+C detiene el servidor. No necesitas activar el entorno virtual. Reinicia el servidor después de cambiar `.env`.
 
-Registra una cuenta, añade tareas o pruebas y guarda tu disponibilidad en el planificador. Mantén Ollama abierto. FastAPI envía las actividades y horarios a `http://127.0.0.1:11434/api/chat`; Python distribuye las sesiones según vencimientos, prioridad y tiempo disponible. Qwen3 redacta el resumen y los objetivos de estudio en tu equipo. El servidor valida el plan antes de guardarlo en MySQL. La base puede estar en un servidor remoto según tu `.env`.
+Registra una cuenta, añade tareas o pruebas y guarda tu disponibilidad en el planificador. Mantén Ollama abierto. FastAPI envía las actividades y horarios a `http://127.0.0.1:11434/api/chat`; Python distribuye las sesiones según vencimientos, prioridad y tiempo disponible. Qwen 3.5 9B redacta el resumen y los objetivos de estudio en tu equipo. El servidor valida el plan antes de guardarlo en MySQL. La base puede estar en un servidor remoto según tu `.env`.
+
+### Modelo para la RX 9060 XT de 16 GB
+
+Se usa [Qwen 3.5 9B Q4_K_M](https://ollama.com/library/qwen3.5:9b), con contexto limitado a 16.384 tokens y razonamiento extendido desactivado. En este equipo, con Ollama 0.34.3, las pruebas de planes con 1, 4 y 10 tareas completaron la generación y validación en aproximadamente 24, 36 y 41 segundos. Ollama informó ejecución 100 % GPU y unos 5,9 GB de memoria para el modelo cargado. Los tiempos y el consumo pueden variar con otras aplicaciones abiertas.
+
+Para actualizar una instalación anterior, descarga `qwen3.5:9b`, cambia `OLLAMA_MODEL` en `.env` y reinicia FastAPI. Puedes descargar de la GPU el modelo anterior sin borrarlo del disco:
+
+```powershell
+ollama pull qwen3.5:9b
+ollama stop qwen3:8b
+```
+
+La pantalla de generación muestra a Lumi, el tiempo transcurrido y tus horarios. El indicador es de espera, sin porcentajes estimados. Si falla la generación, conserva el plan anterior y permite reintentar; también respeta la preferencia de reducir movimiento.
 
 La integración usa [JSON estructurado](https://docs.ollama.com/capabilities/structured-outputs), un contexto de 16 384 tokens y un límite de 3 minutos por solicitud. Ejecuta `ollama ps` para comprobar el uso de GPU. El modelo se mantiene cargado durante 10 minutos tras usarlo. Consulta la [compatibilidad de GPU](https://docs.ollama.com/gpu) si se carga en CPU.
 
@@ -123,7 +136,7 @@ La app incluye las mismas pantallas, tareas, planes y Lumi de la web, con navega
 
 ### Probar el APK
 
-Descarga la aplicación desde [GitHub Releases: Android 1.2.0 de prueba](https://github.com/misterdarkno2-wq/PlanifIA/releases/tag/v1.2.0-android-preview.1).
+Descarga la aplicación desde [GitHub Releases: Android 1.2.1 de prueba](https://github.com/misterdarkno2-wq/PlanifIA/releases/tag/v1.2.1-android-preview.1).
 
 Instala `PlanifIA-android-arm64.apk` de la carpeta `dist` en un Android 7 o posterior con procesador ARM64. Es una compilación optimizada para pruebas, firmada con la clave de depuración de este equipo. Android puede pedir permiso para instalar desde el navegador o gestor de archivos.
 
@@ -254,7 +267,7 @@ Para comprobar que los datos y la sesión persisten después de reiniciar:
 - **401 en `/api/auth/me`:** es normal antes de iniciar sesión.
 - **403 al guardar:** abre la dirección definida en `APP_ORIGIN`. Las llamadas manuales requieren la cabecera `X-Planifia-Request: 1`.
 - **Ollama no conecta:** abre Ollama en el mismo equipo donde ejecutas FastAPI.
-- **Modelo no instalado:** ejecuta `ollama pull qwen3:8b` o descarga el modelo que hayas definido en `OLLAMA_MODEL`.
+- **Modelo no instalado:** ejecuta `ollama pull qwen3.5:9b` o descarga el modelo que hayas definido en `OLLAMA_MODEL`.
 - **Generación lenta:** comprueba `ollama ps` y cierra programas que ocupen la GPU. Una respuesta incompleta o un plan inválido no se guardan.
 
 El servidor está configurado para uso local. Para desplegarlo necesitas HTTPS, `COOKIE_SECURE=true`, un `APP_ORIGIN` correcto y límites de solicitudes compartidos entre procesos.

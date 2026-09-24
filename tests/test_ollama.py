@@ -47,14 +47,14 @@ def test_descansos_validos_entre_tres_bloques():
 
 @pytest.fixture
 def local_model(monkeypatch):
-    monkeypatch.setattr(service,'MODEL','qwen3:8b')
+    monkeypatch.setattr(service,'MODEL','qwen3.5:9b')
     monkeypatch.setattr(service,'local_now',lambda:NOW)
 
 
 def test_api_local_y_plan_valido(monkeypatch,local_model):
     def post(self,url,json):
         assert url=='http://127.0.0.1:11434/api/chat'
-        assert json['model']=='qwen3:8b'
+        assert json['model']=='qwen3.5:9b'
         assert json['stream'] is False and json['think'] is False
         assert json['format']['properties']['objetivos']['minItems']==2
         assert json['options']['num_ctx']==16384
@@ -63,7 +63,7 @@ def test_api_local_y_plan_valido(monkeypatch,local_model):
         return httpx.Response(200,json=payload,request=httpx.Request('POST',url))
     monkeypatch.setattr(httpx.Client,'post',post)
     plan,model=service.generate(AV,TASKS,[])
-    assert model=='qwen3:8b'
+    assert model=='qwen3.5:9b'
     assert plan['bloques'][0]['actividad_id']==1
 
 
@@ -73,7 +73,7 @@ def test_errores_http_controlados(monkeypatch,local_model,status):
     monkeypatch.setattr(httpx.Client,'post',post)
     with pytest.raises(HTTPException) as error:service.generate(AV,TASKS,[])
     assert error.value.status_code==503
-    if status==404:assert 'ollama pull qwen3:8b' in error.value.detail
+    if status==404:assert 'ollama pull qwen3.5:9b' in error.value.detail
 
 
 @pytest.mark.parametrize('payload',[None,[],{},

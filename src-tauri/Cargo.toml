@@ -1,6 +1,6 @@
 [package]
 name = "planifia"
-version = "1.2.0"
+version = "1.2.1"
 description = "Planificador de estudio con Lumi"
 edition = "2021"
 
