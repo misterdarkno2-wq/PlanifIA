@@ -1,6 +1,6 @@
 {
   "name": "planifia",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "android:dev": "tauri android dev",
     "android:apk": "tauri android build --debug --apk --target aarch64",
     "desktop:dev": "tauri dev",
-    "test:mobile": "node --test tests/mobile.test.js tests/remote.test.js"
+    "test:mobile": "node --test tests/mobile.test.js tests/remote.test.js tests/reminders.test.js"
   },
   "devDependencies": {"@tauri-apps/cli": "^2"}
 }

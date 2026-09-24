@@ -2,7 +2,12 @@ from fastapi import APIRouter,Depends,HTTPException
 from backend.database import query,transaction
 from backend.security import usuario_actual
 from backend.services.notification_service import refresh_notifications
+from backend.services.mobile_reminders import scheduled_reminders
 router=APIRouter(prefix='/api/notificaciones',tags=['Notificaciones'])
+
+@router.get('/programadas')
+def programadas(user=Depends(usuario_actual)):
+    return scheduled_reminders(user['id'])
 
 @router.get('')
 def listar(user=Depends(usuario_actual)):

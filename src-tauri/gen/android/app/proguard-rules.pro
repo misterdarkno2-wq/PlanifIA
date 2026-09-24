@@ -1,4 +1,8 @@
 # Add project specific ProGuard rules here.
+# Los avisos programados se reconstruyen con Jackson tras reiniciar Android.
+-keep class app.tauri.notification.Notification { *; }
+-keep class app.tauri.notification.NotificationSchedule** { *; }
+-keep class app.tauri.notification.PendingNotification { *; }
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #

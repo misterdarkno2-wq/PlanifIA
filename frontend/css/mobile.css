@@ -1,15 +1,9 @@
 .brand-image{width:185px;height:auto;display:block;max-width:100%}
 .auth-story .logo{width:210px;background:white;padding:8px 12px;border-radius:14px}
-.connection-page{max-width:530px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
-.connection-logo{display:block;max-width:100%;height:auto;margin:22px auto}
-.connection-page h1{font-size:28px}.connection-page .field{margin:24px 0 12px}
-.connection-page #server-help,.connection-page #connection-status{font-size:13px;margin:12px 0 20px}
-.connection-page button{width:100%}.connection-page .error{margin-bottom:16px}
 .confirm-dialog{max-width:420px;width:calc(100% - 32px)}
 .native body{min-height:100dvh;overscroll-behavior-y:none}
 .native .topbar{padding-top:env(safe-area-inset-top);height:calc(72px + env(safe-area-inset-top))}
 .native .auth-page{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-.native .connection-link{display:inline-block;min-height:30px;padding-top:4px}
 @media(max-width:680px){
  .native .sidebar{height:0;padding:0;border:0}
  .native .sidebar .logo{display:none}

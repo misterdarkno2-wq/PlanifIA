@@ -5,7 +5,6 @@ export const isRemoteWeb=!isNative&&Boolean(apiOrigin);
 const remote=isRemoteWeb?remoteConnection(apiOrigin):null;
 export const invoke=(command,args={})=>globalThis.__TAURI__.core.invoke(command,args);
 export const getServer=()=>isNative?invoke('get_server'):Promise.resolve(remote?.server()||location.origin);
-export const setServer=server=>isNative?invoke('set_server',{server}):remote.setServer(server);
 
 export async function request(path,options={}) {
  if(isNative){

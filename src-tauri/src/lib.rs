@@ -1,9 +1,11 @@
-use reqwest::{header, Client, Method, Url};
+use reqwest::{header, Client, Method};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{fs, path::PathBuf, time::Duration};
 use tauri::{Manager, State};
 use tokio::sync::Mutex;
+
+const API_ORIGIN: &str = "https://api.planifia.cl";
 
 #[derive(Clone, Deserialize, Serialize)]
 struct Connection {
@@ -24,19 +26,12 @@ struct ApiResponse {
     data: Value,
 }
 
-fn server_url(input: &str) -> Result<String, String> {
-    let url = Url::parse(input.trim()).map_err(|_| "Escribe una dirección HTTPS válida.")?;
-    if url.scheme() != "https"
-        || url.host_str().is_none()
-        || !url.username().is_empty()
-        || url.password().is_some()
-        || url.query().is_some()
-        || url.fragment().is_some()
-        || url.path() != "/"
-    {
-        return Err("Usa solo la dirección HTTPS del servidor, sin /app ni contraseñas.".into());
+fn migrate_connection(mut connection: Connection) -> Connection {
+    if connection.server != API_ORIGIN {
+        connection.server = API_ORIGIN.into();
+        connection.session.clear();
     }
-    Ok(url.as_str().trim_end_matches('/').to_owned())
+    connection
 }
 
 fn api_path(path: &str) -> bool {
@@ -63,42 +58,6 @@ impl Backend {
 #[tauri::command]
 async fn get_server(backend: State<'_, Backend>) -> Result<String, String> {
     Ok(backend.connection.lock().await.server.clone())
-}
-
-#[tauri::command]
-async fn set_server(server: String, backend: State<'_, Backend>) -> Result<(), String> {
-    let server = server_url(&server)?;
-    let health = backend
-        .client
-        .get(format!("{server}/api/health"))
-        .timeout(Duration::from_secs(15))
-        .send()
-        .await
-        .map_err(|_| {
-            "No se pudo conectar. Revisa la dirección y que tu servidor siga encendido."
-        })?;
-    if !health.status().is_success() {
-        return Err("El servidor no está listo. Revisa FastAPI y la conexión con MySQL.".into());
-    }
-    let data: Value = health
-        .json()
-        .await
-        .map_err(|_| "Esta dirección no responde como PlanifIA.")?;
-    if data.get("estado").and_then(Value::as_str) != Some("ok")
-        || data.get("conexion").and_then(Value::as_str) != Some("PyMySQL")
-    {
-        return Err("Esta dirección no responde como PlanifIA.".into());
-    }
-    let mut connection = backend.connection.lock().await;
-    if connection.server != server {
-        let next = Connection {
-            server,
-            session: String::new(),
-        };
-        backend.save(&next)?;
-        *connection = next;
-    }
-    Ok(())
 }
 
 #[tauri::command]
@@ -134,13 +93,13 @@ async fn api_request(
             "El servidor tardó demasiado. Comprueba el estado antes de volver a intentarlo."
                 .to_string()
         } else {
-            "No pudimos conectar. Revisa tu conexión y la dirección del servidor en Conexión."
+            "No pudimos conectar con PlanifIA. Revisa Internet o vuelve a intentarlo en unos minutos."
                 .to_string()
         }
     })?;
     let status = response.status().as_u16();
     if (300..400).contains(&status) {
-        return Err("El servidor cambió de dirección. Actualízala en Conexión.".into());
+        return Err("El servidor no está disponible. Vuelve a intentarlo en unos minutos.".into());
     }
     let mut next = connection.clone();
     if path == "/auth/login" && status == 200 {
@@ -166,7 +125,7 @@ async fn api_request(
         Value::Null
     } else {
         response.json().await.map_err(|_| {
-            "El servidor devolvió una respuesta inesperada. Revisa la dirección en Conexión."
+            "El servidor devolvió una respuesta inesperada. Vuelve a intentarlo en unos minutos."
         })?
     };
     let mut current = backend.connection.lock().await;
@@ -183,34 +142,36 @@ async fn api_request(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
             fs::create_dir_all(&directory)?;
             let file = directory.join("connection.json");
-            let mut connection: Connection = if file.exists() {
+            let connection: Connection = if file.exists() {
                 serde_json::from_slice(&fs::read(&file)?)?
             } else {
-                serde_json::from_str(include_str!("../default-server.json"))?
+                Connection {
+                    server: API_ORIGIN.into(),
+                    session: String::new(),
+                }
             };
-            connection.server = server_url(&connection.server).map_err(std::io::Error::other)?;
+            let connection = migrate_connection(connection);
             let client = Client::builder()
                 .https_only(true)
                 .redirect(reqwest::redirect::Policy::none())
                 .connect_timeout(Duration::from_secs(15))
                 .timeout(Duration::from_secs(200))
                 .build()?;
-            app.manage(Backend {
+            let backend = Backend {
                 client,
-                connection: Mutex::new(connection),
+                connection: Mutex::new(connection.clone()),
                 file,
-            });
+            };
+            backend.save(&connection).map_err(std::io::Error::other)?;
+            app.manage(backend);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            api_request,
-            get_server,
-            set_server
-        ])
+        .invoke_handler(tauri::generate_handler![api_request, get_server])
         .run(tauri::generate_context!())
         .expect("No se pudo iniciar PlanifIA");
 }
@@ -220,21 +181,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn validates_server_without_embedded_credentials_or_paths() {
-        assert_eq!(
-            server_url(" https://example.com/ ").unwrap(),
-            "https://example.com"
-        );
-        for invalid in [
-            "http://example.com",
-            "https://user:secret@example.com",
-            "https://example.com/app",
-            "https://example.com?x=1",
-            "https://example.com/#token",
-            "file:///etc/passwd",
-        ] {
-            assert!(server_url(invalid).is_err());
-        }
+    fn migrates_old_servers_without_transferring_sessions() {
+        let old = migrate_connection(Connection {
+            server: "https://old.trycloudflare.com".into(),
+            session: "old-session".into(),
+        });
+        assert_eq!(old.server, API_ORIGIN);
+        assert!(old.session.is_empty());
+        let current = migrate_connection(Connection {
+            server: API_ORIGIN.into(),
+            session: "current-session".into(),
+        });
+        assert_eq!(current.session, "current-session");
     }
 
     #[test]

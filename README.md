@@ -107,7 +107,7 @@ Tras cambiar DNS por primera vez, la propagación y la emisión de los certifica
 
 Abre [PlanifIA](https://planifia.cl). Pages publica las pantallas; las cuentas, tareas, Lumi y los planes se procesan en FastAPI y se guardan en MySQL. Ollama sigue usando la GPU del PC. Mantén el servidor y el túnel encendidos.
 
-El despliegue se actualiza al subir cambios del frontend a `main`. La variable del repositorio **PLANIFIA_API_URL** contiene la dirección HTTPS del servidor, sin `/app` ni `/api`. Si cambia el túnel, actualiza esa variable en GitHub → Settings → Secrets and variables → Actions → Variables y ejecuta **Publicar PlanifIA en GitHub Pages** desde Actions. También puedes cambiarla en **Conexión** dentro de la web para ese navegador.
+El despliegue se actualiza al subir cambios del frontend a `main`. La variable del repositorio **PLANIFIA_API_URL** contiene `https://api.planifia.cl`. La web usa esa dirección fija e ignora las direcciones temporales guardadas por versiones anteriores.
 
 El servidor autoriza exclusivamente los orígenes indicados en `.env`:
 
@@ -123,15 +123,28 @@ La app incluye las mismas pantallas, tareas, planes y Lumi de la web, con navega
 
 ### Probar el APK
 
-Descarga la aplicación desde [GitHub Releases: Android 1.1.0 de prueba](https://github.com/misterdarkno2-wq/PlanifIA/releases/tag/v1.1.0-android-preview.1).
+Descarga la aplicación desde [GitHub Releases: Android 1.2.0 de prueba](https://github.com/misterdarkno2-wq/PlanifIA/releases/tag/v1.2.0-android-preview.1).
 
 Instala `PlanifIA-android-arm64.apk` de la carpeta `dist` en un Android 7 o posterior con procesador ARM64. Es una compilación optimizada para pruebas, firmada con la clave de depuración de este equipo. Android puede pedir permiso para instalar desde el navegador o gestor de archivos.
 
 1. Mantén FastAPI, Ollama y el túnel encendidos en el PC.
 2. Abre PlanifIA y entra con tu cuenta existente, o regístrate.
-3. En **Conexión**, usa `https://api.planifia.cl`, sin `/app` ni `/api`. El APK de prueba anterior conserva un enlace temporal: cámbialo una vez desde esa pantalla.
+3. La app se conecta automáticamente a `https://api.planifia.cl`. No necesitas configurar ninguna dirección.
 
-La dirección inicial para futuras compilaciones está en `src-tauri/default-server.json`; se puede cambiar después desde la app. Cambiarla cierra la sesión local. El túnel `planifia` mantiene la misma dirección al reiniciarlo.
+Al actualizar desde un APK con un túnel temporal, la app migra al dominio fijo y pide iniciar sesión de nuevo. Si ya usaba el dominio actual, conserva la sesión. El túnel `planifia` mantiene la misma dirección al reiniciarlo. El icono utiliza el símbolo proporcionado con margen, guardado en `src-tauri/app-icon.png`.
+
+### Avisos en la bandeja de Android
+
+Con el APK **1.2.0** o posterior, abre **Notificaciones → Activar avisos** y acepta el permiso de Android. Pulsa **Probar aviso** y deja la app en segundo plano: se programa una notificación para unos 10 segundos después.
+
+- Entregas pendientes y pruebas: a las 09:00 del día anterior y del mismo día, según `APP_TIMEZONE` (por defecto, Chile).
+- Sesiones del último plan guardado: 10 minutos antes. Si faltan menos de 10 minutos, se avisa al comenzar. Los descansos y actividades eliminadas o completadas se omiten.
+- Se programan hasta 64 avisos de los próximos 30 días. Abre la app periódicamente para renovar la lista. Puedes sincronizarla manualmente desde Notificaciones.
+- Al editar, completar o eliminar actividades en este teléfono se actualizan los avisos. Al cerrar sesión o desactivarlos se cancelan. Cada cuenta activa sus propios avisos.
+- Los avisos ya sincronizados funcionan sin conexión, con la app cerrada y tras reiniciar Android. Los cambios hechos desde la web u otro dispositivo se sincronizan al abrir la app. Esto no usa notificaciones push desde un servidor.
+- Android puede retrasar los avisos por ahorro de batería o No molestar. **Forzar detención** los bloquea hasta volver a abrir la app. Si denegaste el permiso, actívalo en **Ajustes → Aplicaciones → PlanifIA → Notificaciones**.
+
+Reinicia FastAPI tras actualizar el código para habilitar `/api/notificaciones/programadas`. No requiere tablas nuevas. El PC y el túnel deben estar encendidos para sincronizar; después Android conserva los avisos programados. Los horarios y límites están en `backend/services/mobile_reminders.py`.
 
 ### Compilar en Windows
 
@@ -182,6 +195,14 @@ Se comprobaron registro, acceso, persistencia de sesión, tareas, XP de Lumi y g
 ```powershell
 npm.cmd run test:mobile
 cargo test --manifest-path src-tauri/Cargo.toml --lib
+```
+
+El contrato de los avisos guardados se comprueba además con la implementación Android del complemento:
+
+```powershell
+cd src-tauri\gen\android
+.\gradlew.bat :app:testUniversalReleaseUnitTest -x :app:rustBuildUniversalRelease
+cd ..\..\..
 ```
 
 ## Desarrollo

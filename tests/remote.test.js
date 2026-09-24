@@ -17,17 +17,17 @@ test('Pages conserva la sesión al recargar, sin cookies de terceros, y la revoc
  assert.equal(calls.at(-1).options.headers.Authorization,undefined);
 });
 
-test('cambiar de servidor no transfiere sesiones y un servidor fallido conserva la conexión',async()=>{
- const session=storage(),settings=storage();let ok=true;
+test('el dominio de despliegue ignora direcciones antiguas y no transfiere sesiones',async()=>{
+ const session=storage(),settings=storage();let sent;
  session.setItem('planifia-session:https://old.example.com','a'.repeat(43));
- const fetcher=async()=>({ok,json:async()=>({estado:'ok',conexion:'PyMySQL'})});
- const client=remoteConnection('https://old.example.com',{fetcher,session,settings});
- ok=false;await assert.rejects(client.setServer('https://new.example.com'));
- assert.equal(client.server(),'https://old.example.com');
- assert(session.getItem('planifia-session:https://old.example.com'));
- ok=true;await client.setServer('https://new.example.com');
- assert.equal(client.server(),'https://new.example.com');
- assert.equal(session.getItem('planifia-session:https://old.example.com'),null);
+ settings.setItem('planifia-server','https://old.example.com');
+ const fetcher=async(url,options)=>{sent={url,options};return {status:401,json:async()=>({})};};
+ const client=remoteConnection('https://api.planifia.cl',{fetcher,session,settings});
+ await client.request('/auth/me');
+ assert.equal(client.server(),'https://api.planifia.cl');
+ assert.equal(sent.url,'https://api.planifia.cl/api/auth/me');
+ assert.equal(sent.options.headers.Authorization,undefined);
+ assert.equal(client.setServer,undefined);
  for(const value of ['http://example.com','https://user:secret@example.com','https://example.com/app','https://example.com?x=1'])assert.throws(()=>httpsOrigin(value));
 });
 

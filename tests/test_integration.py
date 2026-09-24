@@ -40,6 +40,13 @@ def test_flujo_mysql_completo(clients):
     task={'titulo':"Historia ' OR 1=1 --",'asignatura':'Historia','descripcion':'Trabajo','fecha_entrega':str(local_now().date()),'prioridad':'alta','dificultad':4,'tiempo_estimado':90}
     created=a.post('/api/tareas',json=task); assert created.status_code==201,created.text
     tid=created.json()['id']
+    future_task={**task,'fecha_entrega':str(local_now().date()+timedelta(days=3))}
+    assert a.put(f'/api/tareas/{tid}',json=future_task).status_code==200
+    scheduled=a.get('/api/notificaciones/programadas').json()
+    assert len(scheduled['items'])==2
+    assert all(n['key'].startswith(f'tarea:{tid}:') for n in scheduled['items'])
+    assert b.get('/api/notificaciones/programadas').json()['items']==[]
+    assert a.put(f'/api/tareas/{tid}',json=task).status_code==200
     assert b.get('/api/tareas').json()==[]
     assert b.put(f'/api/tareas/{tid}',json=task).status_code==404
     assert b.delete(f'/api/tareas/{tid}').status_code==404
@@ -56,6 +63,7 @@ def test_flujo_mysql_completo(clients):
     assert a.get('/api/notificaciones').json()['no_leidas']==0
     assert a.patch(f'/api/tareas/{tid}/estado',json={'estado':'completada'}).status_code==200
     assert a.get('/api/dashboard').json()['pendientes']==0
+    assert a.get('/api/notificaciones/programadas').json()['items']==[]
     assert a.get('/api/notificaciones').json()['items']==[]
     exam={'nombre':'Prueba álgebra','asignatura':'Matemática','fecha':str(local_now().date()+timedelta(days=1)),'prioridad':'alta','dificultad':5,'descripcion':'Ecuaciones','tiempo_estimado':120}
     er=a.post('/api/evaluaciones',json=exam);assert er.status_code==201,er.text
