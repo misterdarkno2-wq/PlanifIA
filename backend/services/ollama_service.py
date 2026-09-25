@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from backend.config import local_now
 from backend.models.schemas import Plan
 ENDPOINT='http://127.0.0.1:11434/api/chat'
-MODEL=os.getenv('OLLAMA_MODEL', 'qwen3.5:9b')
+MODEL=os.getenv('OLLAMA_MODEL', 'hf.co/unsloth/Qwen3.8-27B-GGUF:UD-IQ3_S')
 SYSTEM = """Eres un tutor académico. Responde en español y solo con el JSON solicitado.
 Recibirás actividades y sesiones de estudio ya calculadas. Para cada sesión, propone un objetivo concreto y breve que corresponda a su actividad y duración.
 Usa técnicas como ejercicios, recuperación activa o repaso espaciado. Divide una misma actividad en objetivos progresivos si aparece en varias sesiones.
