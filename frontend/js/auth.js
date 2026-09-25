@@ -7,7 +7,8 @@ $('#auth-form').addEventListener('submit',async event=>{
  event.preventDefault();clearError('#form-error');$('#form-error').className='error';
  const form=event.currentTarget;const fields=Object.fromEntries(new FormData(form));
  if(register&&fields.password!==fields.confirmar){showError(new Error('Las contraseñas no coinciden.'),'#form-error');return;}
- delete fields.confirmar;const button=$('button[type=submit]',form);button.disabled=true;
+ delete fields.confirmar;const button=$('button[type=submit]',form);if(button.disabled)return;
+ const label=button.innerHTML;button.disabled=true;button.textContent=register?'Creando cuenta…':'Iniciando sesión…';form.setAttribute('aria-busy','true');
  try{await api(register?'/auth/registro':'/auth/login',{method:'POST',body:fields});location.href=register?'login.html?registrado=1':'dashboard.html';}
- catch(error){showError(error,'#form-error');}finally{button.disabled=false;}
+ catch(error){showError(error,'#form-error');}finally{button.disabled=false;button.innerHTML=label;form.removeAttribute('aria-busy');}
 });

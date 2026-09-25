@@ -1,5 +1,6 @@
 import {apiOrigin} from './deployment.js';
 import {remoteConnection} from './remote.js';
+import {fetchJSON,requestTimeout} from './http.js';
 export const isNative=Boolean(globalThis.__TAURI__?.core?.invoke);
 export const isRemoteWeb=!isNative&&Boolean(apiOrigin);
 const remote=isRemoteWeb?remoteConnection(apiOrigin):null;
@@ -12,8 +13,5 @@ export async function request(path,options={}) {
   catch(error){throw new Error(typeof error==='string'?error:'No pudimos conectar con PlanifIA.');}
  }
  if(remote)return remote.request(path,options);
- let response;
- try{response=await fetch('/api'+path,{...options,credentials:'same-origin',headers:{'Content-Type':'application/json','X-Planifia-Request':'1',...options.headers},body:options.body===undefined?undefined:JSON.stringify(options.body)});}
- catch{throw new Error('No pudimos conectar con PlanifIA. Revisa que el servidor esté iniciado.');}
- return {status:response.status,data:response.status===204?null:await response.json().catch(()=>null)};
+ return fetchJSON('/api'+path,{...options,credentials:'same-origin',headers:{'Content-Type':'application/json','X-Planifia-Request':'1',...options.headers},body:options.body===undefined?undefined:JSON.stringify(options.body)},{timeoutMs:requestTimeout(path)});
 }
